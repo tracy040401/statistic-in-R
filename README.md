@@ -1,2 +1,2 @@
-# statistic-in-R
+# Statistics in R
 Pratical made in statistical class in INSA
