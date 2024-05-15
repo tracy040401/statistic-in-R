@@ -1,0 +1,234 @@
+---
+title: 'TP 4 : ANOVA - Exercice 1'
+output:
+  html_notebook: default
+author: "Tracy ANDRE"
+date: "May 3rd, 2023"
+---
+
+
+# Exercice 1 : ANOVA à un facteur
+
+#### QUESTION 1 : IMPORTATION DES DONNEES
+
+NB : Y en fonction de X 
+
+*Objectif de l'exercice : savoir si les caractéristiques nutritionnelles sont liées au type de viande utilisée. *
+
+\par 
+*Différence entre ANOVA et summary : Anova = test par facteur et summary test sur les paramètres*
+
+
+#### **Q1 - Importation des données**
+
+```{r}
+setwd("C:/Users/andre/OneDrive/Documents/S6/Stats/TP4 - ANOVA/TP4_Donnees")
+hotdog <- read.table("hotdogs.txt", header=T)
+attach(hotdog)
+head(hotdog)
+```
+
+
+```{r}
+summary(hotdog)
+```
+
+```{r}
+table(hotdog$Type)
+```
+
+```{r}
+hotdog = hotdog[-which(hotdog$Type==4),]
+hotdog
+```
+
+La cmd précédente permet d'enlever le Type n°4 car nous n'avons qu'une valeur pour ce type, ce qui n'est pas vrmt rpztatif. 
+
+
+
+```{r}
+hotdog$Type=as.factor(hotdog$Type)
+hotdog
+```
+
+Cette cmd permet de convertir le Type (qui est un int) en factor 
+Les facteurs sont utilisées pour rpz des variables qualitatives tq le sexe, la couleur ou le type de traitement d'une expérience.
+Les facteurs sont stockées sous forme d'entiers où chaque entier rpz une valeur unique de la variable catégorique. 
+
+Utile pour effectuer des analyses statistiques tq modèle linéaire ou ANOVA => car nécéssite des variables catégoriques en tant que facteurs
+
+Utilse aussi pour la visualisation de données en utilisant des graphiques
+
+
+#### **Q2 - STATS DESCRIPTIVES**
+
+*(a)*
+
+*(b)*
+
+ **Pour les calories : **
+```{r}
+cal <- by(hotdog$Calories, hotdog$Type, summary)
+cal
+```
+  **Pour le sodium :**
+
+```{r}
+sod <- by(hotdog$Sodium, hotdog$Type, summary)
+sod
+```
+
+```{r}
+boxplot(cal, main = "Boîte à moustache - Calories", ylab = "Valeurs", xlab= "Type", col="orange")
+boxplot(sod, main = "Boîte à moustache - Sodium", ylab = "Valeurs", xlab= "Type", col="red")
+```
+
+*(c)*
+
+Interprétation d'un boxplot :
+
+* la boite : rpz 50% des données  (2ème et 3ème quartile)
+    => la ligne à l'intérieur rpz la ligne médiane
+* les moustaches : les valeurs à l'extérieur de la moustache sont extrêmes
+  + la symétrie de la boîte à moustache peut indiquer une distribution symétrique
+  + si les moustaches sont inégales : indique que la distribution a une variation non uniforme
+  + si les moustaches sont rapprochées, les valeurs sont concentrées dans la boite, faible variation 
+* si on compare plusieurs boxplot : 
+  + si les médianes sont similaires ou se chevauchent : peut indiquer une similarité dans la distribution
+  + si les médiances sont différentes et les boites ne se chevauchent pas => différence significative entre les distributions
+
+Par rapport à notre étude, on peut voir que les 3 boxplots du sodium on à peu près la même médiane. Bien que le type 1 semble avoir une variance plus importante, il semblerait que les 3 Types ont une distribution vis-à-vis du sodium identique.
+*On ne voit pas de différence significative en terme de sel dans la viande*
+Quant au calorie, les Types 1 et 2 ont une médiane au même niveau et une variance similaire, ce qui indique donc que ces deux Types on une distribution calorique identique. Ce n'est pas le cas du type 3, qui n'a pas du tout la même valeur de médiane *=> le type 3 de viande semble être nettement moins calorique que le deux autres.* 
+
+
+*NB : quartile : 25%*
+
+**Conclusion : il serait plus intéréssant d'étudier le nombre de calories puisqu'il semble avoir une différence significative entre les Types.**
+
+
+#### **Q3 - ETUDES DU NOMBRE DE CALORIES**
+
+*(a) Modèle associé à l'expérience*
+
+
+$$ Y_{i,j} = \mu + \alpha_i + \epsilon_i \quad \forall i = 1,2,3 \quad  \forall j=1,...,n_i  $$
+
+où  : 
+
+* Yij rpz le nb de calories par hotdog pour le i-ème type de viande de la j-ème marque 
+* mu est la moye,,e globale des nb de calories par hotdog pour toutes les marques et tous les types de viandes 
+* alphai est l'effet fixe du i-ème type de viande $
+* et l'erreur aléatoire associée à la j-ème obs du i-ème type de viande, **idd et gaussien**
+
+*NB : ici les j vont de 1 à $n_i$ car le modèle n'est pas équilibré* 
+
+
+L'hypothèse nulle pour ce modèle est que les moyennes des nb de calories pour les différents type de viandes sont égales ie : 
+
+$$H_0 = \mu_1 = \mu_2 = \mu_3$$ 
+
+```{r}
+model_calories <- lm(Calories~Type, data=hotdog)
+```
+Ceci spécifie que Calories est la variable à expliquer et Type est le facteur qui va expliquer la variance.
+
+
+*(b)*
+
+```{r}
+par(mfrow=c(1,2))
+plot(model_calories, pch=19, col="orange", which = c(1,2))
+par(mfrow=c(1,1))
+```
+
+* Graphique de dispersion des résidus : 
+  + la variance semble constante => homosédasticité vérifiée
+  + dispersion aléatoire => pas vérfiée du tout => normal à cause des 3 différents types distincts
+* QQ Plot : ce graphe sert à savoir si les résidus suivent une loi normale
+  + les pts ne sont pas vrmt alignés sur la droite => donc les résidus ne suivent pas une loi normale 
+  
+Les hypothèses ne sont pas vérifiées. 
+
+
+```{r}
+hist(hotdog$Calories, nclass = 10, col="orange")
+```
+
+Cela confirme que les erreurs ne suivent pas une loi normale.
+*(c)*
+
+```{r}
+anova(model_calories)
+```
+On peut voir donc que l'hypothèse nulle est très peu probable car la p-value est quasiment nulle. De même que la valeur de F est grande ce qui indique que la variance entre les groupe est grande par rapport à la variance intra-groupe => indique églt qu'il existe une différence significative entre les groupes.
+
+
+*cf p31 Cours ANOVA*
+* Df : degree of freedom (dl)
+* Sum Sq : Somme des carrés (SSM et SSR)
+* Mean Sq : moyenne des carrés (CMM = SSM/dl-1 et CMR=SSR/dl-1)
+* Statistique F : F0 = CMM/CMR
+* p-value
+
+
+Avec $ H_0 = \left\{\alpha_1=\alpha_2=\alpha_3=0\right\}$
+
+*(d)*
+
+```{r}
+summary(model_calories)
+```
+
+*Tests sur le modèle des effets (cf p49)*
+
+L'intercept correspond au coeff de la constante dans le modèle ie l'effet moyen des hotdogs. $\mu$
+alpha1 et alpha3 sont significativement différent de 0 : 
+
++ le fait que alpha1 soit proche de 0 peut nous indiquer que l'effet moyen est significativement différent de 0, mais il sert surtout de référence par rapport aux autres.
++ pour le type3 : cela signifie que alpha2 est significativement différent de 0 et que le type3 est important pour expliquer les variations obs de calories 
+
+Contrainte choisie dans ce modèle : $\hat{\alpha_1}$ = 0 
+
+Contrainte natuelle :$$\sum{\alpha_i} = 0 $$
+en R : rajouter dans le model *contrast = list(Type="contr.sum")*
+
+Le nombre de calorie prédit par le modèle : 
+
+* $\hat{\mu}$ = 0 
+* Type 1 : $\hat{\alpha_1}$ = 0 calories
+* Type 2 : $\hat{\alpha_2}$ = 1.856  calories
+* Type 3 : $\hat{\alpha_3}$ = - 38.085 calories
+
+
+Coefficient de détermination : R² = 0.3626 **correction** *: R²0.38 => on prend la valeur ajustée juste pour les régression multiple*
+Cela signifie que le modèle explique à 36% la variabilité des données ie la variation des calories en fonction du type. 
+Le reste de la variation est donc attribuable à d'autres facteurs non présents dans cette étude. 
+Le R² n'est pas très grand, cela signifie qu'on peut difficilement dire que le type de viande explique les calories des hotdog
+
+L'écart-type : 23.46
+
+La dernière ligne fournie par la cmd renvoie le résultat du test de Fisher. Ce test permet de déterminer s'il existe une relation significative entre la variable indépendante et les variables dépendantes.
+
+*NB : même teste que dans l'ANOVA (cf plus haut)*
+
+
+*(e)*
+
+```{r}
+library(emmeans)
+emmeans(model_calories, pairwise~Type, adjust="bonferroni")
+```
+Cette cmd calcule les moyennes estimées pour chaque facteur Type
+\par
+ajustement de Bonferroni pour corriger le niveau de significativité, afin de maintenir un taux d'erreur de type I global de 5%
+\par 
+*notation : pairwise~Type pour comparer les type deux à deux*
+\par 
+contrast => test si Type1 et Type2 ont les mêmes moyennes
+
+le type 3 est le moins caloriques (119)
+\par Il est significativement moins calorique que les deux autres car les p value ajusté est quasi nulle (dans le tableau constraste). \par
+En comparant Type1 - Type2, on retrouve bien le résultat qu'on a trouvé précédemment : avec des moyennes quasi identiques 
+
+

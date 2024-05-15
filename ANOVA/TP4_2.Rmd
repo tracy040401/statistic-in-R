@@ -1,0 +1,90 @@
+---
+title: 'TP 4 : ANOVA - Exercice 2'
+output:
+  pdf_document: default
+  html_notebook: default
+author: "Tracy ANDRE"
+date: "May 10th, 2023"
+---
+# Exercice 2 : Comparaison de l'acidité de trois cafés
+## ANOVA à deux facteurs sans interaction
+
+
+#### **Q0 - Importation et préparation des données**
+
+
+```{r}
+setwd("C:/Users/andre/OneDrive/Documents/S6/Stats/TP4 - ANOVA/TP4_Donnees")
+cafe <- read.table("cafe.csv",header=T, sep=";")
+attach(cafe)
+head(cafe)
+```
+
+
+```{r}
+summary(cafe)
+```
+
+```{r}
+cafe$cafe=as.factor(cafe$cafe)
+cafe$juge=as.factor(cafe$juge)
+head(cafe)
+```
+
+
+#### **Q1 - ANOVA à un facteur  : café**
+
+
+Les modèles :
+```{r}
+model_note <- lm(Note~cafe, data=cafe)
+```
+
+
+Anova Note : 
+```{r}
+anova(model_note)
+```
+
+#### **Q2 - Test sur les moyennes**
+
+```{r}
+summary(model_note)
+```
+
+on peut voir que le cafe1 et 3 ont des moyennes qui peuvent être considérés comme identique mais pas cafe2 au risque de 5%
+
+mais ceci n'est pas vrai au risque de 1% car la p_value de cafe 3>0.01
+
+#### **Q3 - Effet des juges**
+
+
+```{r}
+model_cafe <- lm(Note ~ cafe + juge, data=cafe)
+summary(model_cafe)
+```
+
+
+Les juges ont une effet non négligeable sur la note (avec un p value très faible pour chacun d'entre eux).
+
+
+#### **Q4 - ANOVA à deux facteurs **
+
+```{r}
+anova(model_cafe)
+```
+
+
+On voit que les probabilités critiques sont quasi nulle donc on rejette $H_0$ et on conclut que les deux facteurs ont une influence sur la note de l'acidité du café.
+
+
+#### **Q5 - Estimations par le calcul manuel**
+
+Modèle à deux facteurs : 
+
+$$ Y_{ijk} = \mu + \alpha_i + \beta_j + \epsilon_{ijk} \quad \forall i = 1,2,3 , \, \forall j = 1,...,6, \, \forall k = 1,...K$$
+Avec K le nb de répétitions => sauf que ici c'est répétitif donc k = 1
+
+
+
+
