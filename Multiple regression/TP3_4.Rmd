@@ -1,0 +1,131 @@
+---
+title: "TP3 : Exercice 4 : la tension de vapeur du mercure"
+output:
+  html_notebook: default
+author: "Tracy ANDRE"
+date: "May 9th, 2023"
+---
+
+#### **Q1 - Importation des données**
+
+```{r}
+library(datasets)
+data("pressure")
+pp <- pressure$pressure
+pt <- pressure$temperature
+plot(pt, pp, pch=21, bg="red")
+```
+
+On pourrait utilisé une fonction exponentielle (ou polynomiale)
+
+```{r}
+head(pressure)
+summary(pressure)
+```
+
+#### **Q2 - Régression linéaire simple**
+
+```{r}
+model1 <- lm(log(pp)~pt, data = pressure)
+summary(model1)
+```
+
+*Le modèle obtenu est-il fiable ?*
+
+On peut évaluer la fiabilité du modèle obtenu avec le coefficient du R² : 0.9433 =\> Très proche de 1, il témoigne la qualité de l'ajustement du modèle au données d'entrainement.
+
+On peut aussi observé le graphe des résidus pour savoir si les hypothèses sont valides :
+
+```{r}
+plot(model1, col = "red", pch = 19, which = c(1,2))
+```
+
+Pour que les hypothèses soit valides et que le modèle soit fiable, il faut que les erreurs soit réparties de manière aléatoire et avec une variable constante, ce qui n'est pas le cas ici. De plus, le QQ plot nous montre bien que les erreurs ne s'alignent pas totalement avec la droite, ce qui signifie que les erreurs ne sont pas distribuées normalement.
+
+*Donner les prédiction de la tension de la vapeur du mercure pour 90, 230, 400 degrés*
+
+Pour 90°C :
+
+```{r}
+predict.lm(object = model1, newdata = data.frame(pt = 90), interval = "prediction", level = 0.95)
+```
+
+Pour 230°C :
+
+```{r}
+predict.lm(object = model1, newdata = data.frame(pt = 230), interval = "prediction", level = 0.95)
+```
+
+Pour 400°C :
+
+```{r}
+predict.lm(object = model1, newdata = data.frame(pt = 400), interval = "prediction", level = 0.95)
+```
+
+#### **Q3 - Formule de Duprés**
+
+*(a) Montrer que c'est une régression multiple*
+
+$$ ln(P) = \alpha_1 + \alpha_2*ln(T) + \frac{\alpha_3}{T} $$
+
+*(b) Déterminer les valeurs estimées de* $\alpha_j$
+
+```{r}
+pt[1] <- pt[1] + 0.1
+pressure$inv_pt <- 1/pt
+
+model2 <- lm(log(pp)~log(pt)+inv_pt, data = pressure)
+summary(model2)
+
+```
+
+$\alpha_1 = -24.64$ $\alpha_2 = 5.21$ $\alpha_3 = 12.61$
+
+*(c) Est-il + fiable que le précédant ?*
+
+```{r}
+plot(model2, col = "orange", pch = 19, which = c(1,2))
+```
+
+Les erreurs semblent ici bien s'aligner avec la courbe =\> suivent une loi normale
+
+Par contre : pas distribué aléatoirement ?
+
+La valeur du R² est de 0.98 ce qui est encore mieux que le modèle précédant
+
+*(d) Mêmes prédictions*
+
+Pour 90°C:
+
+```{r}
+predict.lm(object = model2, newdata = data.frame(pt = 90, inv_pt = 1/90), interval = "prediction")
+
+```
+
+Pour 230°C:
+
+```{r}
+predict.lm(object = model2, newdata = data.frame(pt = 230, inv_pt = 1/230), interval = "prediction")
+```
+
+Pour 400°C:
+
+```{r}
+predict.lm(object = model2, newdata = data.frame(pt = 400, inv_pt = 1/400), interval = "prediction")
+```
+
+#### **Q4 - Régression multiple encore**
+
+```{r}
+pressure$inv_carre <- pressure$inv_pt^2
+model3 <- lm(log(pp)~log(pt) + inv_pt + inv_carre + pt, data = pressure)
+summary(model3)
+```
+
+On peut en effet affirmer que la variable T a un effet logarithmique sur la pression puisque l'ajout de ces variables augmente le R² et que la p value des variables explicatives est quasi nulle, donc sont considérés comme non négligeable dans le modèle.
+
+```{r}
+plot(model3, col = "blue", pch = 19, which =2)
+```
+
+On peut voir que le QQPlot s'améliore de plus en plus lorsqu'on ajoute des 1/T...

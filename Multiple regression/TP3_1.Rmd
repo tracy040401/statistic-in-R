@@ -1,0 +1,191 @@
+---
+title: "TP3 - Exercice 1"
+author: "Tracy ANDRE"
+date: "April 30, 2023"
+output:
+  pdf_notebook
+---
+TP3 : RÃ©gression linÃ©aire multiple
+
+EXERCICE 1 : Effet de la publicitÃ© sur les ventes d'un produit
+
+Question 1
+```{r}
+setwd("C:/Users/andre/OneDrive/Documents/S6/Stats/TP3_Donnees")
+pub <- read.table("Advertising.csv",header=T, row.names = 1, sep=",")
+
+attach(pub)
+
+head(pub)
+```
+
+```{r}
+summary(pub)
+```
+
+Question 2
+
+```{r}
+correlation <- cor(pub)
+correlation
+```
+Les variables TV et Sales semblent Ãªtre fortement correlÃ©es
+2Ã¨me + grosse corrÃ©lation : ventes et radio
+A l'inverse, les varaibles TV et Newspaper semblent Ãªtre anti-correlÃ©es
+
+Question 3 : RÃ©gression linÃ©aire simple de la variable Sales sur la variable TV
+
+
+  * nuage de points : 
+```{r}
+plot(y= pub$Sales, x = pub$TV, ylab="Ventes", xlab="TV", pch=19)
+reg=lm(pub$Sales~TV,data=pub)
+resume=summary(reg)
+resume
+
+x=c(min(pub$TV),max(pub$TV))
+y = reg$coeff[1] + reg$coeff[2]*x
+lines(x,y,col="red")
+```
+
+  * graphe des rÃ©sidus 
+
+
+```{r}
+plot(x = reg$fitted.values,y = reg$residuals, xlab="^y",ylab="Residuals", pch=19, col="orange")
+abline(h=0)
+abline(h=-2*resume$sigma,lty=2, col = "red")
+abline(h=2*resume$sigma, col="blue", lty=2)
+```
+
+
+Le modÃ¨le est-il bien ajustÃ© aux donnÃ©es ? Le budget allouÃ© Ã  la publicitÃ© Ã  la tÃ©lÃ©vision a-t-il une influence sur les
+ventes du produit ?
+=> Le modÃ¨le ne semble pas ajustÃ© aux donnÃ©es car la variance n'est pas constante dans le 1er graphe
+=> Les donnÃ©es ne sont pas rÃ©parties alÃ©atoirement donc cela laisse penser que le budget TV a une influence sur les ventes 
+
+
+Question 4
+
+Avec la variable Radio 
+
+```{r}
+plot(y= pub$Sales, x = pub$Radio, ylab="Ventes", xlab="Radio", pch=19)
+reg1=lm(pub$Sales~Radio,data=pub)
+resume=summary(reg1)
+resume
+
+x=c(min(pub$TV),max(pub$TV))
+y = reg1$coeff[1] + reg1$coeff[2]*x
+lines(x,y,col="red")
+
+plot(x = reg1$fitted.values,y = reg1$residuals, xlab="^y",ylab="Residuals", pch=19, col="red")
+abline(h=0)
+abline(h=-2*resume$sigma,lty=2, col = "red")
+abline(h=2*resume$sigma, col="blue", lty=2)
+
+```
+
+Avec la variable Newspapers
+
+```{r}
+plot(y= pub$Sales, x = pub$Newspaper, ylab="Ventes", xlab="Journaux", pch=19)
+reg2=lm(pub$Sales~Newspaper,data=pub)
+resume=summary(reg2)
+resume
+
+x=c(min(pub$Newspaper),max(pub$Newspaper))
+y = reg2$coeff[1] + reg2$coeff[2]*x
+lines(x,y,col="red")
+
+plot(x = reg2$fitted.values,y = reg2$residuals, xlab="^y",ylab="Residuals", pch=19, col="blue")
+abline(h=0)
+abline(h=-2*resume$sigma,lty=2, col = "blue")
+abline(h=2*resume$sigma, lty=2)
+```
+
+NB : dans toutes les rÃ©gressions, il faudrait regarder les RÂ², la p value et regarder la cohÃ©rence (comme au TP2) // TODO
+significativement diffÃ©rent de 0 au risque de 5 
+
+RÂ² => Ã  quel point explique la variabilitÃ© de y
+
+
+-------------------------------------------------
+
+
+Question 5 - RÃ©gression multiple sur 3 variables 
+
+```{r}
+reg=lm(formula = Sales~TV+Radio+Newspaper, data=pub)
+reg$coefficients
+```
+On peut lire dans l'ordre : beta0^, beta1^ ... etc
+avec beta0^ la quantitÃ© qu'on va vendre si on ne fait ni TV, ni Radio, ni Journaux
+
+
+```{r}
+summary(reg)
+```
+
+Attention pour le RÂ² on doit prendre l'ajuster pour observer la variabilitÃ© des ventes est expliquÃ© par le modÃ¨le (ici 0.8956)
+sigma chapeau c'est residual sd error : 1.686
+
+
+Question 6
+
+Peut-on affrmer, avec un risque d'erreur de 5 %, qu'au moins une des variables explicatives a
+une influence sur la quantitÃ© de produits vendus ?
+
+test global => beta1=beta2=beta3=0 => la proba critique est toute petite donc rejeter => donc au moins une qui n'est pas nulle 
+la statistique = F-statistic => 
+
+
+Question 7 
+Peut-on affrmer, avec un risque d'erreur de 5 %, que le budget allouÃ© Ã  la publicitÃ© Ã  la tÃ©lÃ©vision
+a une influence sur les ventes du produit ?
+
+Intercept = beta0
+sur la 1Ã¨re ligne : on test beta1 = 0 => proba critique petite => beta1 pas nul
+sur la 2Ã¨me ligne beta2 = 0 => proba petite => beta2 pas nul
+sur la 3Ã¨me ligne : beta3 =0 => proba gde => beta3 considÃ©rÃ© comme nul
+
+NB : on peut regarder les *** Ã  cotÃ© du test => donne le degrÃ©s de proche de 0 
+
+
+Question 8 
+```{r}
+reg=lm(formula = Sales~TV+Radio, data=pub)
+reg$coefficients
+summary(reg)
+```
+
+F-statistic gde => donc une des deux variables qui explique qqch 
+On remarque que le coefficient beta2^ est + gd que l'autre donc il semblerait + jusdicieux de mettre les 10 000â¬ dans la radio 
+lorsqu'on augmente d'1 unitÃ© => 0.18
+pour 10 milliers de dollars => 0.18 * 10 = 1.8 milliers nb d'unitÃ© 
+
+// normalement faut faire les cmd en dessous mais faut installer 
+
+
+```{r}
+library(rgl)
+library(car)
+scatter3d(Sales~TV+Radio, data=pub)
+```
+
+Question 10 
+
+Notre client a investi 100 000 dollars dans la TV et 20 000 dans la radio
+Combien de produit devrait-il vendre ?
+
+```{r}
+model <- lm(Sales ~ TV + Radio + Newspaper, data=pub)
+
+predict(reg, newdata = data.frame(TV = 100, Radio = 20, Newspaper = 0), interval = "prediction")
+```
+
+Il devrait vendre 2133 produits supplÃ©mentaires ?? 
+
+
+
+

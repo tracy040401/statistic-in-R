@@ -1,0 +1,141 @@
+---
+title: 'TP3 - Exercice 3 : Une application forestière '
+output:
+  html_notebook: default
+author: "Tracy ANDRE"
+date: "8th May, 2023"
+---
+**Note pour le notebook :**
+
+Executing this chunk *Ctrl+Shift+Enter*
+
+Add a new chunk *Ctrl+Alt+I*.
+
+Preview *Ctrl+Shift+K* 
+
+#### **Q1 - Importation des données**
+
+```{r}
+setwd("C:/Users/andre/OneDrive/Documents/S6/Stats/TP3_Donnees")
+eucal <- read.table("eucalyptus.txt",header=T)
+
+attach(eucal)
+
+head(eucal)
+```
+
+```{r}
+summary(eucal)
+```
+
+
+#### **Q2 - Nuage de points**
+
+```{r}
+plot(ht, circ, pch = 19, col = "orange", title("Hauteur en fonction de la circonférences"))
+```
+
+
+
+#### **Q3 - Modèle linéaire simple**
+
+Le modèle de régression linéaire multiple est : 
+
+$$ \forall i = 1,..., n \quad Y_i = \beta_0 + \beta_1x_i + \epsilon_i$$
+
+avec comme hypothèses : 
+
+* erreurs résiduelles sont indépendantes et de même loi $\mathcal{N}(0,\sigma^2)$
+* que la variance des erreurs est constante
+* hypothèse de linéarité suppose que la relation entre X et Y est linéaire
+
+
+#### **Q4 - Superposition nuage de points et droite de régression**
+
+```{r}
+model1 <- lm(ht ~ circ, data = eucal)
+plot(ht, circ, pch = 19, col = "orange", title("Hauteur en fonction de la circonférence"), ylim = c(0,70))
+abline(model1, col="red")
+
+```
+
+On peut voir que la droite de régression passe en dessous le nuage de points : cela peut traduire une très faible corrélation entre les deux variables ht et circ.
+
+#### **Q4(bis) - Graphe des résidus**
+
+```{r}
+plot(model1$fitted.values, model1$residuals, col = "red", pch = 19, xlab = "^y", ylab = "Residuals")
+resume1 <- summary(model1)
+abline(h=0)
+abline(h=-2*resume1$sigma,lty=2, col = "blue")
+abline(h=2*resume1$sigma, lty=2, col = "orange")
+
+plot(model1, col = "red", pch = 19, which = 2)
+```
+
+On peut voir que les hypothèses semblent bien être vérifiée, malgré une petite agglomération des points. 
+
+#### **Q5 - Modèle de régression multiple**
+
+*(a) Modèle sous forme matricielle*
+
+$$ Ht = Circ \times \beta  + \epsilon $$
+avec : $$ Ht = \begin{pmatrix} Ht_1 \\ Ht_2 \\ ... \\ Ht_n \end{pmatrix} ,
+Circ_{n \times 3} = \begin{pmatrix} 1&circ_{1,1}&\sqrt{circ_{1,2}} \\ .&.&. \\ .&.&. \\ 1&circ_{n,1}&\sqrt{circ_{n,2}} \end{pmatrix}, 
+\beta = \begin{pmatrix} \beta_0 \\ \beta_1 \\ \beta_2 \end{pmatrix},
+E_{n \times 1} = \begin{pmatrix} \epsilon_1 \\ \epsilon_2 \\ . \\ . \\ \epsilon_n \end{pmatrix}
+$$
+
+*(b) Estimation des paramètres*
+
+$$ \hat{\beta} = (X'X) \times X' \times H_t$$ 
+
+
+```{r}
+n <- length(ht)
+X <- matrix(c(rep(1,n), circ, sqrt(circ)), ncol=3)
+beta_chapo <- solve(t(X) %*% X) %*% t(X) %*% ht
+beta_chapo
+```
+
+*(c) Variance résiduelle*
+
+
+$$ E = Y - \hat{Y} $$ 
+$$ \hat{\sigma} = \frac{E'E}{n -p - 1} $$
+
+```{r}
+residus <- ht - X %*% beta_chapo
+sigma_chapo <- t(residus) %*% residus / (n-length(beta_chapo))
+sigma_chapo
+```
+
+*(d) Estimation de l'écart-type des beta chapo*
+
+//TOCONTINUE
+
+pas compris celle ci : essayer de le faire à la mano
+
+```{r}
+s_beta <- sqrt(sigma_chapo * diag(solve(t(X)%*% X)))
+s_beta
+```
+
+
+*(e) La circonférence d'un arbre a une influence sur sa hauteur ?*
+
+Hypothèses du test de Student : 
+
+$$ H_0 : \left\{ \beta_j = 0 \right\} $$
+
+
+La statistique de test et sa loi :
+
+$$ t = \frac{\hat{\beta_j}}{\hat{\sigma_{\beta_j}}}   $$
+
+Région de rejet du test : 
+
+*(f) Vérfication avec la fonction lm*
+
+*(g)*
+

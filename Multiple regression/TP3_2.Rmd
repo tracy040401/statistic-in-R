@@ -1,0 +1,261 @@
+---
+title: 'TP3 - Exercice 2 : Composition du lait et rendement fromager'
+author: "Tracy ANDRE"
+output:
+  html_notebook: default
+---
+
+**QUESTION 1 - IMPORTATION DES DONNEES**
+
+```{r}
+setwd("C:/Users/andre/OneDrive/Documents/S6/Stats/TP3_Donnees")
+lait <- read.table("Lait.txt",header=T, sep=" ")
+
+attach(lait)
+
+head(lait)
+```
+```{r}
+summary(lait)
+
+```
+
+**QUESTION 2 - MATRICE DE CORRELATIONS**
+
+```{r}
+correlation <- cor(lait[,1:5])
+correlation
+```
+
+Les variables fortement corrélées sont : TxProt et TxCase (0.96), Densite et ExSec (0.76), TxCase et ExSec (0.7)
+
+Cela peut entrainer des non linéarités sur notre modèle de régressions.
+Quand des variables sont fortement corrélées peut entrainer des erreurs sur l'inversion de la matrice X'X => qui entrainerait des grosses erreurs dans les calculs + tard. 
+Repérer les variables correlées va nous permettre de simplifier le modèle en réduisant le nombre de variable. 
+
+
+
+**QUESTION 3 - RENDEMENTS EN FONCTION DES DIFFERENTES VARIABLES **
+
+```{r}
+scatterplot <-pairs(~Rendement + Densite + TxButy + TxProt + TxCase + ExSec, data = lait, panel = function(x,y){
+  points(x,y)
+  abline(lm(y~x), col="red")
+}) 
+```
+
+
+La matrice de dispersion, ou scatterplot matrix en anglais, est une rpztation graphique de la relation entre chaque paire de variables dans une df. En dehors des diags => montrent les graphiques de dispoersion pour chaque variables.
+Dans un graphe de dispersion, sur l'axe des x => variable explicative 
+                                  l'axe des y => variable à expliquer 
+
+Si la relation entre deux variables est linéaires => on peut observer une tendance linéaire 
+=> ici, on voit bien que cela confirme notre réponse précédante 
+
+Si une majorité des pts se trouvent dans une partie spécifique du graphique => indique une relation non linéaire ou une influence d'une variable non incluse dans le graphique 
+
+En gros une matrice de corrélation version nuage de pts
+
+Nous ce qu'on cherche c'est d'observer Rendement en variable à observer
+=> on regarde la 1ère ligne
+
+*NB: on peut rajouter les deux lignes de code suivantes si on veut connaitre la pente dans chaque graphe*
+     *"m <- round(coef(lm(y ~ x)), 2)[2]*
+        *text(mean(x), max(y), paste("Pente =", m), pos = 4)"*
+*NB: on peut juste faire pairs(lait)*
+
+        
+```{r}
+for (i in 1:5){
+  model<-lm(Rendement~lait[,i],data=lait)
+  resume <- summary(model)
+
+  
+  plot(x = model$fitted.values,y = model$residuals, xlab="^y",ylab="Residuals", pch=19, col="orange",title(main=colnames(lait)[i]))
+  abline(h=0)
+  abline(h=-2*resume$sigma,lty=2, col = "blue")
+  abline(h=2*resume$sigma, lty=2)
+}
+
+```
+
+
+Les données semblent être réparties assez aléatoirement => sauf pour densité et ExSec qui peuvent laisser penser une petite agglutitanation 
+Les données semblent être homosédastiques => variances constantes
+
+
+**QUESTION 4 - REGRESSION MULTIPLE**
+
+
+  *(a) Estimations des paramètres*
+
+```{r}
+model <- lm(Rendement~Densite + TxCase + TxProt + TxButy + ExSec, data=lait)
+resume<-summary(model)
+resume
+```
+
+  *(b)* On peut voir que seul TxButy et ExSec on une proba critique quasi nul 
+      => donc tous les autres termes peuvent être considéré comme nul, ou n'ayant pas de réelle influence sur le rendement 
+      (au risque de 5%)
+
+*NB : On peut déduire les résultat précédants : On peut églt le trouver avec l'ANOVA*
+
+*Si l'éleveur réussit à augmenter TxButy et TxProt de 0.005, tout en diminuant TxCase de 0.002 (5pour1000 et 2pour1000)*
+*=> Quelle qté de fromage en +/- peut-il s'attendre pour 100 litres de lait ?*
+
+Cela va faire augmenter le taux de rendement car ont augmente les variables significativement différentes de 0 et de coeff positif.
+Le coefficient dans estimate = augmentation du rendement lorsqu'on augment d'une unité la variable (ici de 1 pour 1000). 
+
+```{r}
+augmentation <- model$coefficients[5]*5 + model$coefficients[4]*5 - 2*model$coefficients[3]
+augmentation
+```
+
+
+
+*Quel est le pourcentage de la variabilité du rendement expliqué par les variables explicatives ?*
+*(c) Tracer le graphe des résidus. Commenter.*
+
+```{r}
+#version à la mano
+plot(x = model$fitted.values,y = model$residuals, xlab="^y",ylab="Residuals", pch=19, col="red", ylim=c(-1,1)) 
+abline(h=0)
+abline(h=-2*resume$sigma,lty=2, col = "red")
+abline(h=2*resume$sigma, col="blue", lty=2)
+
+#version automatique
+plot(model, pch=19, col="red")
+```
+
+
+
+
+Le graphe des résidus semblent avoir une répartition aléatoire et de variance constante.
+*Lorsqu'on regarde le QQplot => on doit regarder l'alignement des pts sur la droite pour que ça soit normal*
+
+
+*NB : dans plot(model) on peut rajouter le paramètre which pour choisir quel graphe on veut afficher*
+
+
+
+**QUESTION 5 - MODELE 2 - SELECTION AUTO DE VARIABLES AVEC BACKWARD**
+
+```{r}
+mod2 <- step(model, direction = "backward")
+```
+
+
+Pour rappel, l'AIC est un critère d'évaluation de qualité d'un modèle statistique => basé sur le max de vraisemblance du modèle => qui mesure à quel pts les données obs sont probables en supposant le modèle correcte
+L'AIC ajoute une pénalité au nb de paramètre du modèle pour éviter surapprentissage => permettant de favoriser les modèle + simple
+
+La fonction step : fait tourner un algo qui enlève variable par variable et garde l'AIC le + faible, et s'arrête qd l'AIC ne peut être plus faible que le modèle courant
+
+Le modèle ayant l'AIC la + faible est la préférée.
+
+```{r}
+summary(mod2)
+```
+
+Le modèle retenu est Rendement ~ Densite + TxProt + TxButy + ExSec
+
+
+**QUESTION 6 - MODELE 3 - SANS INTERCEPT**
+
+```{r}
+mod3 <- lm(Rendement~ -1 + Densite+TxButy+TxProt+ExSec, data=lait)
+summary(mod3)
+```
+
+Calcul un modèle de régression linéaire multiple 
+dans lequel le "-1" signifie que l'ordonnées à l'origine ou l'intercept est supprimée du modèle
+  => pour que le modèle ne suppose pas que le rendement est non nul lorsque toutes les autres variables sont nulles 
+  
+
+
+**QUESTION 7 - DETERMINATION DE L'AIC**
+
+
+```{r}
+extractAIC(model)
+```
+```{r}
+extractAIC(mod2)
+```
+
+```{r}
+extractAIC(mod3)
+```
+
+
+NB : AIC = 2k - 2log(L)
+
+=> avec k le nb de paramètre dans le modèle et L la fonction de vraisemblance maximale du modèle
+
+NB : 
+  * extractAIC() retourne un vecteur dont les valeurs sont l'AIC et le nb de paramètres du modèle déjà ajusté
+  * AIC() retourne calcul l'AIC pour un modèle donné 
+
+Meilleur modèle en terme d'AIC ? 
+=> celui qui a l'AIC la + faible 
+=> le modèle n°2 : Rendement ~ Densite + TxProt + TxButy + ExSec
+
+Meilleur modèle en terme de R² ? 
+=> + le R² est élevé, + les variables explicatives expliquent la variable à expliquer
+=> on regarde le R² ajusted => sinon on ne peut pas comparer les modèles car nb différents de variable
+  - modèle 1 : 0.59
+  - modèle 2 : 0.60
+  - modèle 3 : 0.9995
+
+Quel modèle retenir ? Pourquoi ? 
+
+
+Il y a un choix à faire entre le modèle 2 et le modèle 3.
+Le modèle numéro 2 à le meilleur AIC, et le modèle 3 à le meilleur R² (et de loin). 
+
+Pour une bonne capacité prédictive, il vaut mieux choisir un meilleur R². 
+Le R² est une mesure de la qualité de l'ajustement du modèle qui prend en compte la complexité du modèle.
+
+Pour expliquer le mieux la relation entre les variables indépendantes et la variables dépendantes, il vaut mieux choisir un AIC + faible.
+L'AIC est une mesure de la qualité de l'ajustement qui prend en compte à la fois la précision et la complexité du modèle.
+AIC => meilleur compromis entre précision et complexité du modèle. 
+
+Etant donné la + gde différence entre les R² et la question suivante, il me semble plus jusdicieux de choisir le modèle 3.
+
+*NB : summary(model)$ajd.r.squared donne le R² ajusted*
+
+
+**QUESTION 8 - PREDICTION DU RENDEMENT FROMAGER**
+
+  * Lait Prim'Holstein
+```{r}
+Prim <- predict.lm(mod3, newdata = data.frame(TxButy = 39.7, TxProt = 31.9, Densite = 1.032, ExSec = 130), interval = "prediction")
+
+Prim
+```
+  * Lait Normande 
+
+```{r}
+Norm <- predict.lm(mod3, newdata = data.frame(TxButy = 42.8, TxProt = 34.5, Densite = 1.032, ExSec = 130), interval = "prediction")
+
+Norm
+```
+
+
+
+
+CONLUSION : 
+
+Une vache Prim'Holstein a un rendement de 14.96 kg/100L de fromage. 
+Une vache Normande a un rendement de 15.59 kg/100L de fromage.
+
+*NB : rbind(data.frame1, data.frame2) pour faire tout en une ligne*
+
+
+
+
+
+
+
+
+
