@@ -6,7 +6,10 @@ You can find in this R file the exam that regroup all the skills that we had to 
 
 ### Multiple Regression
 In this folder, you can find notebooks of praticals about Multiple Regression.
+If you want to see correctly a html notebook, please, download it.
 
 ### ANOVA
 In this folder, you can find notebooks of praticals about ANOVA.
+If you want to see correctly a html notebook, please, download it.
+
 
